@@ -1,0 +1,8 @@
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg"
+  class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium MuiSvgIcon-root MuiSvgIcon-fontSizeLarge css-zjt8k" focusable="false"
+  aria-hidden="true" viewBox="0 0 24 24" data-testid="BookmarkAddIcon" tabindex="-1" title="BookmarkAdd" width="67"
+  height="67">
+  <path
+    d="M21 7h-2v2h-2V7h-2V5h2V3h2v2h2v2zm-2 14-7-3-7 3V5c0-1.1.9-2 2-2h7c-.63.84-1 1.87-1 3 0 2.76 2.24 5 5 5 .34 0 .68-.03 1-.1V21z"
+    fill-opacity="0.87" fill="#fff"></path>
+</svg>

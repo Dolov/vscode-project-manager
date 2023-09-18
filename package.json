@@ -1,6 +1,6 @@
 {
-  "name": "vscode-projects-manager",
-  "displayName": "vscode-projects-manager",
+  "name": "vscode-project-manager",
+  "displayName": "Project Manager",
   "description": "项目管理",
   "version": "0.0.1",
   "engines": {
@@ -12,12 +12,84 @@
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
-    "commands": [
-      {
-        "command": "vscode-projects-manager.helloWorld",
-        "title": "Hello World"
-      }
-    ]
+    "menus": {
+      "view/title": [
+        {
+          "command": "project-manager.refreshCurrent",
+          "when": "view == current"
+        }
+      ],
+      "projectManager.sideBar.current.title": [
+        
+      ],
+      "view/item/context": [{
+          "command": "project-manager.openInNew",
+          "when": "view == current",
+          "group": "inline"
+        },
+        {
+          "command": "project-manager.copy",
+          "when": "view == current",
+          "group": "inline"
+        },
+        {
+          "command": "project-manager.collect",
+          "when": "view == current",
+          "group": "inline"
+        },
+        {
+          "command": "project-manager.collected",
+          "when": "view == current",
+          "group": "inline"
+        }
+      ]
+    },
+    "commands": [{
+      "command": "project-manager.helloWorld",
+      "title": "Hello World"
+    }, {
+      "command": "project-manager.openInNew",
+      "title": "在新窗口中打开",
+      "icon": "images/open-new.svg"
+    }, {
+      "command": "project-manager.copy",
+      "title": "复制",
+      "icon": "images/copy.svg"
+    }, {
+      "command": "project-manager.collect",
+      "title": "收藏",
+      "icon": "images/collect.svg"
+    }, {
+      "command": "project-manager.collected",
+      "title": "取消收藏",
+      "icon": "images/collected.svg"
+    }, {
+      "command": "project-manager.refreshCurrent",
+      "title": "刷新",
+      "icon": "images/refresh.svg"
+    }],
+    "viewsContainers": {
+      "activitybar": [{
+        "id": "projectManager",
+        "title": "项目管理器",
+        "icon": "images/project.svg"
+      }]
+    },
+    "views": {
+      "projectManager": [{
+          "id": "current",
+          "name": "最近使用"
+        },
+        {
+          "id": "favorites",
+          "name": "收藏夹"
+        }
+      ]
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Dolov/vscode-project-manager"
   },
   "scripts": {
     "vscode:prepublish": "pnpm run compile",
