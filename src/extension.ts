@@ -3,17 +3,20 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import { DepNodeProvider } from './nodeDependencies'
 import { CurrentTreeViewProvider } from './CurrentProvider'
-import { ProjectItemProps, copyFolder, increName } from './utils'
+import { FavoriteTreeProvider } from './FavoriteProvider'
+import { ProjectItemProps, copyFolder, increName, initConfigFile, updateConfigJson, deleteConfigJson } from './utils'
 
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
+	
+	initConfigFile()
+
 	const rootPath = (vscode.workspace.workspaceFolders && (vscode.workspace.workspaceFolders.length > 0))
 	? vscode.workspace.workspaceFolders[0].uri.fsPath : undefined;
-	
+
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	// This line of code will only be executed once when your extension is activated
 	console.log('Congratulations, your extension "project-manager" is now active!');
@@ -39,8 +42,22 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.commands.executeCommand('vscode.openFolder', folderUri, true);
 	});
 
-	vscode.window.createTreeView('favorites', {
-		treeDataProvider: new DepNodeProvider(rootPath)
+	const favoriteTreeProvider =  new FavoriteTreeProvider(rootPath)
+
+	vscode.window.createTreeView('favorite', {
+		treeDataProvider: favoriteTreeProvider
+	});
+
+	const favoriteDisposable = vscode.commands.registerCommand('project-manager.favorite', ({ item: project }) => {
+		updateConfigJson(project)
+		favoriteTreeProvider.refresh()
+		currentTreeViewProvider.refresh()
+	});
+
+	const favoritedDisposable = vscode.commands.registerCommand('project-manager.favorited', ({ item: project }) => {
+		deleteConfigJson(project)
+		favoriteTreeProvider.refresh()
+		currentTreeViewProvider.refresh()
 	});
 
 	const currentTreeViewProvider = new CurrentTreeViewProvider(rootPath)
@@ -67,7 +84,10 @@ export async function activate(context: vscode.ExtensionContext) {
 	});
 	  
 
-	context.subscriptions.push(disposable, openProjectDisposable, openNewProjectDisposable, copyDisposable, refreshCurrentDisposable);
+	context.subscriptions.push(
+		disposable, openProjectDisposable, openNewProjectDisposable,
+		copyDisposable, refreshCurrentDisposable, favoriteDisposable, favoritedDisposable
+	);
 }
 
 // This method is called when your extension is deactivated

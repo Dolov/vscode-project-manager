@@ -88,33 +88,35 @@ export function copyFolder(sourceDir: string, targetDir: string, options?: {
 }
 
 
-/** 获取指定文件夹下的所有文件名，和文件夹 */
-export const getFilesAndFolders = (directory: string) => {
-  const fNames: string[] = []
-  const dNames: string[] = []
-  // 读取文件夹内容
-  const filenames = fs.readdirSync(directory);
-  
-  // 迭代文件夹内容
-  filenames.forEach((filename) => {
-    // 获取文件/文件夹的完整路径
-    const filePath = path.join(directory, filename);
-    
-    // 获取文件/文件夹的状态
-    const stats = fs.statSync(filePath);
-    
-    if (stats.isFile()) {
-      fNames.push(filename)
-    } else if (stats.isDirectory()) {
-      dNames.push(filename)
-      const { dirNames, fileNames } = getFilesAndFolders(filePath);
-      dNames.push(...dirNames)
-      fNames.push(...fileNames)
-    }
-  });
+export const configPath = path.join(__dirname, 'config.json')
 
-  return {
-    dirNames: dNames,
-    fileNames: fNames,
+export const initConfigFile = () => {
+  if (fs.existsSync(configPath)) {
+    return
   }
+  fs.writeFileSync(configPath, JSON.stringify([], null, 2))
+}
+
+export const getConfig = () => {
+  const config = fs.readFileSync(configPath, { "encoding": "utf-8" })
+  return JSON.parse(config)
+}
+
+export const updateConfigJson = (project: ProjectItemProps) => {
+  const config: ProjectItemProps[] = getConfig()
+  const index = config.findIndex((item: ProjectItemProps) => project.path === item.path)
+  if (index > -1) {
+    config.splice(index, 1, project)
+  } else {
+    config.push(project)
+  }
+  fs.writeFileSync(configPath, JSON.stringify(config, null, 2))
+}
+
+export const deleteConfigJson = (project: ProjectItemProps) => {
+  const config: ProjectItemProps[] = getConfig()
+  const index = config.findIndex((item: ProjectItemProps) => project.path === item.path)
+  if (index === -1) return
+  config.splice(index, 1)
+  fs.writeFileSync(configPath, JSON.stringify(config, null, 2))
 }

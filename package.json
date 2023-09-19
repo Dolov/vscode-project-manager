@@ -22,24 +22,25 @@
       "projectManager.sideBar.current.title": [
         
       ],
-      "view/item/context": [{
+      "view/item/context": [
+        {
           "command": "project-manager.openInNew",
-          "when": "view == current",
+          "when": "view == current || view == favorite",
           "group": "inline"
         },
         {
           "command": "project-manager.copy",
-          "when": "view == current",
+          "when": "view == current || view == favorite",
           "group": "inline"
         },
         {
-          "command": "project-manager.collect",
-          "when": "view == current",
+          "command": "project-manager.favorite",
+          "when": "viewItem == favorite",
           "group": "inline"
         },
         {
-          "command": "project-manager.collected",
-          "when": "view == current",
+          "command": "project-manager.favorited",
+          "when": "viewItem == favorited",
           "group": "inline"
         }
       ]
@@ -56,13 +57,13 @@
       "title": "复制",
       "icon": "images/copy.svg"
     }, {
-      "command": "project-manager.collect",
+      "command": "project-manager.favorite",
       "title": "收藏",
-      "icon": "images/collect.svg"
+      "icon": "images/favorite.svg"
     }, {
-      "command": "project-manager.collected",
+      "command": "project-manager.favorited",
       "title": "取消收藏",
-      "icon": "images/collected.svg"
+      "icon": "images/favorited.svg"
     }, {
       "command": "project-manager.refreshCurrent",
       "title": "刷新",
@@ -81,7 +82,7 @@
           "name": "最近使用"
         },
         {
-          "id": "favorites",
+          "id": "favorite",
           "name": "收藏夹"
         }
       ]

@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import { ProjectItemProps, getCurrentProjects } from './utils'
+import { ProjectItemProps, getCurrentProjects, getConfig } from './utils'
 
 export class CurrentTreeViewProvider implements vscode.TreeDataProvider<Project> {
 
@@ -21,10 +21,11 @@ export class CurrentTreeViewProvider implements vscode.TreeDataProvider<Project>
 	}
 
 	getChildren(element?: Project): Thenable<Project[]> {
+		const config = getConfig()
 		return new Promise(async resolve => {
 			const projects: ProjectItemProps[] = await getCurrentProjects()
 			const items = projects.map(item => {
-				return new Project(item)
+				return new Project(item, config)
 			})
 			resolve(items)
 		})
@@ -33,10 +34,13 @@ export class CurrentTreeViewProvider implements vscode.TreeDataProvider<Project>
 
 export class Project extends vscode.TreeItem {
 
+	contextValue = "favorite"
+
 	constructor(
-		public readonly item: ProjectItemProps
+		public readonly item: ProjectItemProps,
+		public readonly config: ProjectItemProps[]
 	) {
-		const { name, branchName } = item
+		const { path, name, branchName } = item
 		super(name);
 		this.iconPath = new vscode.ThemeIcon('folder');
 		this.tooltip = `${name}`;
@@ -46,6 +50,11 @@ export class Project extends vscode.TreeItem {
 			title: 'Open Project',
 			command: 'project-manager.openProject',
 			arguments: [item]
+		}
+
+		const target = config.find(item => item.path === path)
+		if (target) {
+			this.contextValue = "favorited"
 		}
 	}
 }
