@@ -11,6 +11,7 @@ import { ProjectItemProps, copyFolder, increName, initConfigFile, updateConfigJs
 // Your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
 	
+	// 初始化配置文件
 	initConfigFile()
 
 	const rootPath = (vscode.workspace.workspaceFolders && (vscode.workspace.workspaceFolders.length > 0))
@@ -29,49 +30,57 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.window.showInformationMessage('Hello World from project-manager!');
 	});
 
+	// 在当前窗口打开项目
 	const openProjectDisposable = vscode.commands.registerCommand('project-manager.openProject', (project: ProjectItemProps) => {
 		const { path } = project
 		const folderUri = vscode.Uri.file(path);
 		vscode.commands.executeCommand('vscode.openFolder', folderUri);
 	});
 
+	// 在新窗口打开项目
 	const openNewProjectDisposable = vscode.commands.registerCommand('project-manager.openInNew', ({ item: project }) => {
 		const { path } = project
 		const folderUri = vscode.Uri.file(path);
 		vscode.commands.executeCommand('vscode.openFolder', folderUri, true);
 	});
 
+	/** 提供“收藏夹”视图节点数据 */
 	const favoriteTreeProvider =  new TreeDataProvider(rootPath, "favorite")
-
 	vscode.window.createTreeView('favorite', {
 		treeDataProvider: favoriteTreeProvider
 	});
 
+	/** 加入“收藏” */
 	const favoriteDisposable = vscode.commands.registerCommand('project-manager.favorite', ({ item: project }) => {
 		updateConfigJson(project)
 		favoriteTreeProvider.refresh()
 		currentTreeViewProvider.refresh()
 	});
 
+	/** 取消“收藏” */
 	const favoritedDisposable = vscode.commands.registerCommand('project-manager.favorited', ({ item: project }) => {
 		deleteConfigJson(project)
 		favoriteTreeProvider.refresh()
 		currentTreeViewProvider.refresh()
 	});
 
+	/** 提供“最近使用”视图节点数据 */
 	const currentTreeViewProvider = new TreeDataProvider(rootPath, "current")
 	vscode.window.createTreeView('current', {
 		treeDataProvider: currentTreeViewProvider
 	});
 
+	/** 刷新“最近使用” */
 	const refreshCurrentDisposable = vscode.commands.registerCommand('project-manager.refreshCurrent', () => {
 		currentTreeViewProvider.refresh()
 	});
 
+	/** 刷新“收藏夹” */
 	const refreshFavoritedDisposable = vscode.commands.registerCommand('project-manager.refreshFavorited', () => {
 		favoriteTreeProvider.refresh()
 	});
 
+	/** 复制出一个新项目 */
 	const copyDisposable = vscode.commands.registerCommand('project-manager.copy', ({ item: project }) => {
 		const { path: dirPath, name } = project
 		const parentPath = path.dirname(dirPath)
