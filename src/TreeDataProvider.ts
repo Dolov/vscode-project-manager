@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { ProjectItemProps, getCurrentProjects, getConfig } from './utils'
+import { ProjectItemProps, getCurrentProjects, getConfig, getBranchName } from './utils'
 
 export class TreeDataProvider implements vscode.TreeDataProvider<Project> {
 
@@ -37,7 +37,12 @@ export class TreeDataProvider implements vscode.TreeDataProvider<Project> {
     return new Promise(async resolve => {
 			const projects: ProjectItemProps[] = getConfig(this.context)
 			const items = projects.map(item => {
-				return new Project(item, projects)
+				const { path } = item
+				const branchName = getBranchName(path)
+				return new Project({
+					...item,
+					branchName,
+				}, projects)
 			})
 			resolve(items)
 		})

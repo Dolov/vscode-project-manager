@@ -4,7 +4,7 @@ import * as path from 'path'
 import { execSync } from 'child_process'
 
 
-const getBranchName = (folderPath: string) => {
+export const getBranchName = (folderPath: string) => {
   try {
     // 执行 git 命令获取分支名称
     const branchName = execSync('git rev-parse --abbrev-ref HEAD', { cwd: folderPath }).toString().trim();
