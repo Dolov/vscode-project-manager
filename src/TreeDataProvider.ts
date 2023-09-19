@@ -10,9 +10,12 @@ export class TreeDataProvider implements vscode.TreeDataProvider<Project> {
     this._onDidChangeTreeData.fire();
   }
 
-  type = ""
-	constructor(private workspaceRoot: string | undefined, type: "current" | "favorite") {
+  type: "current" | "favorite"
+	context: vscode.ExtensionContext
+
+	constructor(private workspaceRoot: string | undefined, context: vscode.ExtensionContext, type: "current" | "favorite") {
 		this.type = type
+		this.context = context
 	}
 
 	getTreeItem(element: Project): vscode.TreeItem {
@@ -20,7 +23,7 @@ export class TreeDataProvider implements vscode.TreeDataProvider<Project> {
 	}
 
   getCurrentTreeData(): Thenable<Project[]> {
-    const config: ProjectItemProps[] = getConfig()
+    const config: ProjectItemProps[] = getConfig(this.context)
 		return new Promise(async resolve => {
 			const projects: ProjectItemProps[] = await getCurrentProjects()
 			const items = projects.map(item => {
@@ -32,7 +35,7 @@ export class TreeDataProvider implements vscode.TreeDataProvider<Project> {
 
   getFavoriteTreeData(): Thenable<Project[]> {
     return new Promise(async resolve => {
-			const projects: ProjectItemProps[] = getConfig()
+			const projects: ProjectItemProps[] = getConfig(this.context)
 			const items = projects.map(item => {
 				return new Project(item, projects)
 			})

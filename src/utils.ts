@@ -87,36 +87,24 @@ export function copyFolder(sourceDir: string, targetDir: string, options?: {
   });
 }
 
-
-export const configPath = path.join(__dirname, 'config.json')
-
-export const initConfigFile = () => {
-  if (fs.existsSync(configPath)) {
-    return
-  }
-  fs.writeFileSync(configPath, JSON.stringify([], null, 2))
+export const getConfig = (context: vscode.ExtensionContext) => {
+  const state = context.globalState
+  const favorite: ProjectItemProps[] = state.get("favorite") || []
+  return favorite
 }
 
-export const getConfig = () => {
-  const config = fs.readFileSync(configPath, { "encoding": "utf-8" })
-  return JSON.parse(config)
+export const updateConfigJson = (project: ProjectItemProps, context: vscode.ExtensionContext) => {
+  const favorite = getConfig(context)
+  context.globalState.update("favorite", [
+    ...favorite,
+    project
+  ])
 }
 
-export const updateConfigJson = (project: ProjectItemProps) => {
-  const config: ProjectItemProps[] = getConfig()
-  const index = config.findIndex((item: ProjectItemProps) => project.path === item.path)
-  if (index > -1) {
-    config.splice(index, 1, project)
-  } else {
-    config.push(project)
-  }
-  fs.writeFileSync(configPath, JSON.stringify(config, null, 2))
-}
-
-export const deleteConfigJson = (project: ProjectItemProps) => {
-  const config: ProjectItemProps[] = getConfig()
-  const index = config.findIndex((item: ProjectItemProps) => project.path === item.path)
+export const deleteConfigJson = (project: ProjectItemProps, context: vscode.ExtensionContext) => {
+  const favorite = getConfig(context)
+  const index = favorite.findIndex((item: ProjectItemProps) => project.path === item.path)
   if (index === -1) return
-  config.splice(index, 1)
-  fs.writeFileSync(configPath, JSON.stringify(config, null, 2))
+  favorite.splice(index, 1)
+  context.globalState.update("favorite", favorite)
 }

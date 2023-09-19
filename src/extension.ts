@@ -4,15 +4,11 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import { TreeDataProvider } from './TreeDataProvider'
-import { ProjectItemProps, copyFolder, increName, initConfigFile, updateConfigJson, deleteConfigJson } from './utils'
-
+import { ProjectItemProps, copyFolder, increName, updateConfigJson, deleteConfigJson } from './utils'
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
-	
-	// 初始化配置文件
-	initConfigFile()
 
 	const rootPath = (vscode.workspace.workspaceFolders && (vscode.workspace.workspaceFolders.length > 0))
 	? vscode.workspace.workspaceFolders[0].uri.fsPath : undefined;
@@ -45,27 +41,27 @@ export async function activate(context: vscode.ExtensionContext) {
 	});
 
 	/** 提供“收藏夹”视图节点数据 */
-	const favoriteTreeProvider =  new TreeDataProvider(rootPath, "favorite")
+	const favoriteTreeProvider =  new TreeDataProvider(rootPath, context, "favorite")
 	vscode.window.createTreeView('favorite', {
 		treeDataProvider: favoriteTreeProvider
 	});
 
 	/** 加入“收藏” */
 	const favoriteDisposable = vscode.commands.registerCommand('project-manager.favorite', ({ item: project }) => {
-		updateConfigJson(project)
+		updateConfigJson(project, context)
 		favoriteTreeProvider.refresh()
 		currentTreeViewProvider.refresh()
 	});
 
 	/** 取消“收藏” */
 	const favoritedDisposable = vscode.commands.registerCommand('project-manager.favorited', ({ item: project }) => {
-		deleteConfigJson(project)
+		deleteConfigJson(project, context)
 		favoriteTreeProvider.refresh()
 		currentTreeViewProvider.refresh()
 	});
 
 	/** 提供“最近使用”视图节点数据 */
-	const currentTreeViewProvider = new TreeDataProvider(rootPath, "current")
+	const currentTreeViewProvider = new TreeDataProvider(rootPath, context, "current")
 	vscode.window.createTreeView('current', {
 		treeDataProvider: currentTreeViewProvider
 	});
