@@ -2,7 +2,7 @@
   "name": "project-manager-next",
   "displayName": "Project Manager Next",
   "description": "Easily manage multiple projects and branches",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "publisher": "Dolov",
   "engines": {
     "vscode": "^1.79.1"
@@ -25,9 +25,7 @@
           "when": "view == favorite"
         }
       ],
-      "projectManager.sideBar.current.title": [
-        
-      ],
+      "projectManager.sideBar.current.title": [],
       "view/item/context": [
         {
           "command": "project-manager.openInNew",
@@ -51,44 +49,54 @@
         }
       ]
     },
-    "commands": [{
-      "command": "project-manager.helloWorld",
-      "title": "Hello World"
-    }, {
-      "command": "project-manager.openInNew",
-      "title": "在新窗口中打开",
-      "icon": "images/open-new.svg"
-    }, {
-      "command": "project-manager.copy",
-      "title": "复制",
-      "icon": "images/copy.svg"
-    }, {
-      "command": "project-manager.favorite",
-      "title": "收藏",
-      "icon": "images/favorite.svg"
-    }, {
-      "command": "project-manager.favorited",
-      "title": "取消收藏",
-      "icon": "images/favorited.svg"
-    }, {
-      "command": "project-manager.refreshCurrent",
-      "title": "刷新",
-      "icon": "images/refresh.svg"
-    }, {
-      "command": "project-manager.refreshFavorite",
-      "title": "刷新",
-      "icon": "images/refresh.svg"
-    }
-  ],
+    "commands": [
+      {
+        "command": "project-manager.helloWorld",
+        "title": "Hello World"
+      },
+      {
+        "command": "project-manager.openInNew",
+        "title": "在新窗口中打开",
+        "icon": "images/open-new.svg"
+      },
+      {
+        "command": "project-manager.copy",
+        "title": "复制",
+        "icon": "images/copy.svg"
+      },
+      {
+        "command": "project-manager.favorite",
+        "title": "收藏",
+        "icon": "images/favorite.svg"
+      },
+      {
+        "command": "project-manager.favorited",
+        "title": "取消收藏",
+        "icon": "images/favorited.svg"
+      },
+      {
+        "command": "project-manager.refreshCurrent",
+        "title": "刷新",
+        "icon": "images/refresh.svg"
+      },
+      {
+        "command": "project-manager.refreshFavorite",
+        "title": "刷新",
+        "icon": "images/refresh.svg"
+      }
+    ],
     "viewsContainers": {
-      "activitybar": [{
-        "id": "projectManager",
-        "title": "项目管理器",
-        "icon": "images/project.svg"
-      }]
+      "activitybar": [
+        {
+          "id": "projectManager",
+          "title": "项目管理器",
+          "icon": "images/project.svg"
+        }
+      ]
     },
     "views": {
-      "projectManager": [{
+      "projectManager": [
+        {
           "id": "current",
           "name": "最近使用"
         },
