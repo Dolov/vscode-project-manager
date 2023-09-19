@@ -1,9 +1,7 @@
 import * as vscode from 'vscode';
-import * as fs from 'fs';
-import * as path from 'path';
 import { ProjectItemProps, getCurrentProjects, getConfig } from './utils'
 
-export class CurrentTreeViewProvider implements vscode.TreeDataProvider<Project> {
+export class TreeDataProvider implements vscode.TreeDataProvider<Project> {
 
 	private _onDidChangeTreeData: vscode.EventEmitter<Project | undefined | null | void> = new vscode.EventEmitter<Project | undefined | null | void>();
   readonly onDidChangeTreeData: vscode.Event<Project | undefined | null | void> = this._onDidChangeTreeData.event;
@@ -12,16 +10,17 @@ export class CurrentTreeViewProvider implements vscode.TreeDataProvider<Project>
     this._onDidChangeTreeData.fire();
   }
 
-	constructor(private workspaceRoot: string | undefined) {
-		
+  type = ""
+	constructor(private workspaceRoot: string | undefined, type: "current" | "favorite") {
+		this.type = type
 	}
 
 	getTreeItem(element: Project): vscode.TreeItem {
 		return element;
 	}
 
-	getChildren(element?: Project): Thenable<Project[]> {
-		const config = getConfig()
+  getCurrentTreeData(): Thenable<Project[]> {
+    const config: ProjectItemProps[] = getConfig()
 		return new Promise(async resolve => {
 			const projects: ProjectItemProps[] = await getCurrentProjects()
 			const items = projects.map(item => {
@@ -29,6 +28,23 @@ export class CurrentTreeViewProvider implements vscode.TreeDataProvider<Project>
 			})
 			resolve(items)
 		})
+  }
+
+  getFavoriteTreeData(): Thenable<Project[]> {
+    return new Promise(async resolve => {
+			const projects: ProjectItemProps[] = getConfig()
+			const items = projects.map(item => {
+				return new Project(item, projects)
+			})
+			resolve(items)
+		})
+  }
+
+	getChildren(element?: Project): Thenable<Project[]> {
+    if (this.type === "current") {
+      return this.getCurrentTreeData()
+    }
+    return this.getFavoriteTreeData()
 	}
 }
 

@@ -3,8 +3,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import { CurrentTreeViewProvider } from './CurrentProvider'
-import { FavoriteTreeProvider } from './FavoriteProvider'
+import { TreeDataProvider } from './TreeDataProvider'
 import { ProjectItemProps, copyFolder, increName, initConfigFile, updateConfigJson, deleteConfigJson } from './utils'
 
 
@@ -42,7 +41,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.commands.executeCommand('vscode.openFolder', folderUri, true);
 	});
 
-	const favoriteTreeProvider =  new FavoriteTreeProvider(rootPath)
+	const favoriteTreeProvider =  new TreeDataProvider(rootPath, "favorite")
 
 	vscode.window.createTreeView('favorite', {
 		treeDataProvider: favoriteTreeProvider
@@ -60,13 +59,17 @@ export async function activate(context: vscode.ExtensionContext) {
 		currentTreeViewProvider.refresh()
 	});
 
-	const currentTreeViewProvider = new CurrentTreeViewProvider(rootPath)
+	const currentTreeViewProvider = new TreeDataProvider(rootPath, "current")
 	vscode.window.createTreeView('current', {
 		treeDataProvider: currentTreeViewProvider
 	});
 
 	const refreshCurrentDisposable = vscode.commands.registerCommand('project-manager.refreshCurrent', () => {
 		currentTreeViewProvider.refresh()
+	});
+
+	const refreshFavoritedDisposable = vscode.commands.registerCommand('project-manager.refreshFavorited', () => {
+		favoriteTreeProvider.refresh()
 	});
 
 	const copyDisposable = vscode.commands.registerCommand('project-manager.copy', ({ item: project }) => {
@@ -86,7 +89,8 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(
 		disposable, openProjectDisposable, openNewProjectDisposable,
-		copyDisposable, refreshCurrentDisposable, favoriteDisposable, favoritedDisposable
+		copyDisposable, refreshCurrentDisposable, favoriteDisposable, favoritedDisposable,
+		refreshFavoritedDisposable,
 	);
 }
 

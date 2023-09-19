@@ -17,6 +17,10 @@
         {
           "command": "project-manager.refreshCurrent",
           "when": "view == current"
+        },
+        {
+          "command": "project-manager.refreshFavorite",
+          "when": "view == favorite"
         }
       ],
       "projectManager.sideBar.current.title": [
@@ -68,7 +72,12 @@
       "command": "project-manager.refreshCurrent",
       "title": "刷新",
       "icon": "images/refresh.svg"
-    }],
+    }, {
+      "command": "project-manager.refreshFavorite",
+      "title": "刷新",
+      "icon": "images/refresh.svg"
+    }
+  ],
     "viewsContainers": {
       "activitybar": [{
         "id": "projectManager",
