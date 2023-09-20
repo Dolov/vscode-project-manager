@@ -1,58 +1,63 @@
 import * as vscode from 'vscode';
-import { ProjectItemProps, getCurrentProjects, getConfig, getBranchName } from './utils'
+import { ProjectItemProps, getBranchName, store } from './utils'
 
-export class TreeDataProvider implements vscode.TreeDataProvider<Project> {
+export class CurrentProvider implements vscode.TreeDataProvider<Project> {
 
 	private _onDidChangeTreeData: vscode.EventEmitter<Project | undefined | null | void> = new vscode.EventEmitter<Project | undefined | null | void>();
   readonly onDidChangeTreeData: vscode.Event<Project | undefined | null | void> = this._onDidChangeTreeData.event;
 
-  refresh(): void {
-    this._onDidChangeTreeData.fire();
+  async refresh() {
+		this._onDidChangeTreeData.fire();
   }
 
-  type: "current" | "favorite"
-	context: vscode.ExtensionContext
-
-	constructor(private workspaceRoot: string | undefined, context: vscode.ExtensionContext, type: "current" | "favorite") {
-		this.type = type
-		this.context = context
+	constructor(private workspaceRoot: string | undefined) {
 	}
 
 	getTreeItem(element: Project): vscode.TreeItem {
 		return element;
 	}
 
-  getCurrentTreeData(): Thenable<Project[]> {
-    const config: ProjectItemProps[] = getConfig(this.context)
+	getChildren(element?: Project): Thenable<Project[]> {
+    const favorites: ProjectItemProps[] = store.favorite
 		return new Promise(async resolve => {
-			const projects: ProjectItemProps[] = await getCurrentProjects()
-			const items = projects.map(item => {
-				return new Project(item, config)
+			const items = store.current.map(item => {
+				return new Project(item, favorites)
 			})
 			resolve(items)
 		})
+	}
+}
+
+
+export class FavoriteProvider implements vscode.TreeDataProvider<Project> {
+
+	private _onDidChangeTreeData: vscode.EventEmitter<Project | undefined | null | void> = new vscode.EventEmitter<Project | undefined | null | void>();
+  readonly onDidChangeTreeData: vscode.Event<Project | undefined | null | void> = this._onDidChangeTreeData.event;
+
+  async refresh() {
+    this._onDidChangeTreeData.fire();
   }
 
-  getFavoriteTreeData(): Thenable<Project[]> {
+	constructor(private workspaceRoot: string | undefined) {
+	}
+
+	getTreeItem(element: Project): vscode.TreeItem {
+		return element;
+	}
+
+	getChildren(element?: Project): Thenable<Project[]> {
     return new Promise(async resolve => {
-			const projects: ProjectItemProps[] = getConfig(this.context)
-			const items = projects.map(item => {
-				const { path } = item
+			const projects: ProjectItemProps[] = store.favorite
+			const items = projects.map(itemc => {
+				const { path } = itemc
 				const branchName = getBranchName(path)
 				return new Project({
-					...item,
+					...itemc,
 					branchName,
 				}, projects)
 			})
 			resolve(items)
 		})
-  }
-
-	getChildren(element?: Project): Thenable<Project[]> {
-    if (this.type === "current") {
-      return this.getCurrentTreeData()
-    }
-    return this.getFavoriteTreeData()
 	}
 }
 

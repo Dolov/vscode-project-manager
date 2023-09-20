@@ -20,25 +20,40 @@ export interface ProjectItemProps {
   branchName?: string
 }
 
+export const store: {
+  current: ProjectItemProps[]
+  favorite: ProjectItemProps[]
+} = {
+  current: [],
+  favorite: []
+}
+
 export const getCurrentProjects = async () => {
+
   const opened = await vscode.commands.executeCommand("_workbench.getRecentlyOpened");
   // @ts-ignore
   const workspaces = opened.workspaces || []
 
-  const projects = workspaces.map((workspace: any) => {
-    const originPath: string = workspace?.folderUri?.path || "";
-    const originPathArr = originPath.split("/");
-    const name = originPathArr.pop();
-    const path = workspace?.folderUri?.path || ""
-    return {
-      name,
-      path,
-      branchName: getBranchName(path),
-    };
-  });
-
-  return projects;
+  store.current = workspaces
+    .filter((workspace: any) => {
+      const originPath: string = workspace?.folderUri?.path || "";
+      return fs.existsSync(originPath)
+    })
+    .map((workspace: any) => {
+      const originPath: string = workspace?.folderUri?.path || "";
+      const originPathArr = originPath.split("/");
+      const name = originPathArr.pop();
+      const path = workspace?.folderUri?.path || ""
+      return {
+        name,
+        path,
+        branchName: getBranchName(path),
+      };
+    });
+  
+  return store.current
 };
+
 
 /** 数字结尾 */
 export const endWithNumber = /\d+$/
@@ -87,24 +102,9 @@ export function copyFolder(sourceDir: string, targetDir: string, options?: {
   });
 }
 
-export const getConfig = (context: vscode.ExtensionContext) => {
+export const getFavoriteProjects = (context: vscode.ExtensionContext) => {
   const state = context.globalState
   const favorite: ProjectItemProps[] = state.get("favorite") || []
-  return favorite
-}
-
-export const updateConfigJson = (project: ProjectItemProps, context: vscode.ExtensionContext) => {
-  const favorite = getConfig(context)
-  context.globalState.update("favorite", [
-    ...favorite,
-    project
-  ])
-}
-
-export const deleteConfigJson = (project: ProjectItemProps, context: vscode.ExtensionContext) => {
-  const favorite = getConfig(context)
-  const index = favorite.findIndex((item: ProjectItemProps) => project.path === item.path)
-  if (index === -1) return
-  favorite.splice(index, 1)
-  context.globalState.update("favorite", favorite)
+  store.favorite = favorite.filter(item => !!item)
+  return store.favorite
 }

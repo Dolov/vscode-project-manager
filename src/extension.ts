@@ -3,15 +3,19 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import { TreeDataProvider } from './TreeDataProvider'
-import { ProjectItemProps, copyFolder, increName, updateConfigJson, deleteConfigJson } from './utils'
+import { debounce } from 'lodash'
+import { CurrentProvider, FavoriteProvider } from './TreeDataProvider'
+import { ProjectItemProps, copyFolder, increName, getFavoriteProjects, store, getCurrentProjects } from './utils'
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
 
+	await getCurrentProjects()
+	getFavoriteProjects(context)
+
 	const rootPath = (vscode.workspace.workspaceFolders && (vscode.workspace.workspaceFolders.length > 0))
-	? vscode.workspace.workspaceFolders[0].uri.fsPath : undefined;
+		? vscode.workspace.workspaceFolders[0].uri.fsPath : undefined;
 
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	// This line of code will only be executed once when your extension is activated
@@ -26,58 +30,113 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.window.showInformationMessage('Hello World from project-manager!');
 	});
 
-	// 在当前窗口打开项目
-	const openProjectDisposable = vscode.commands.registerCommand('project-manager.openProject', (project: ProjectItemProps) => {
+	const openFolder = (project: ProjectItemProps, newWin?: boolean) => {
 		const { path } = project
 		const folderUri = vscode.Uri.file(path);
-		vscode.commands.executeCommand('vscode.openFolder', folderUri);
+		vscode.commands.executeCommand('vscode.openFolder', folderUri, newWin);
+	}
+
+	// 在当前窗口打开项目
+	const openProjectDisposable = vscode.commands.registerCommand('project-manager.openProject', (project: ProjectItemProps) => {
+		openFolder(project)
 	});
 
 	// 在新窗口打开项目
 	const openNewProjectDisposable = vscode.commands.registerCommand('project-manager.openInNew', ({ item: project }) => {
-		const { path } = project
-		const folderUri = vscode.Uri.file(path);
-		vscode.commands.executeCommand('vscode.openFolder', folderUri, true);
+		openFolder(project, true)
 	});
 
 	/** 提供“收藏夹”视图节点数据 */
-	const favoriteTreeProvider =  new TreeDataProvider(rootPath, context, "favorite")
+	const favoriteTreeProvider = new FavoriteProvider(rootPath)
 	vscode.window.createTreeView('favorite', {
 		treeDataProvider: favoriteTreeProvider
 	});
 
+	const debounceStorage = debounce(async () => {
+		context.globalState.update("favorite", store.favorite)
+	}, 2000)
+
 	/** 加入“收藏” */
 	const favoriteDisposable = vscode.commands.registerCommand('project-manager.favorite', ({ item: project }) => {
-		updateConfigJson(project, context)
+		store.favorite.push(project)
 		favoriteTreeProvider.refresh()
 		currentTreeViewProvider.refresh()
+		debounceStorage()
 	});
 
 	/** 取消“收藏” */
 	const favoritedDisposable = vscode.commands.registerCommand('project-manager.favorited', ({ item: project }) => {
-		deleteConfigJson(project, context)
+		const index = store.favorite.findIndex(item => item.path === project.path)
+		if (index === -1) return
+		store.favorite.splice(index, 1)
 		favoriteTreeProvider.refresh()
 		currentTreeViewProvider.refresh()
+		debounceStorage()
 	});
 
 	/** 提供“最近使用”视图节点数据 */
-	const currentTreeViewProvider = new TreeDataProvider(rootPath, context, "current")
+	const currentTreeViewProvider = new CurrentProvider(rootPath)
 	vscode.window.createTreeView('current', {
 		treeDataProvider: currentTreeViewProvider
 	});
 
 	/** 刷新“最近使用” */
-	const refreshCurrentDisposable = vscode.commands.registerCommand('project-manager.refreshCurrent', () => {
+	const refreshCurrentDisposable = vscode.commands.registerCommand('project-manager.refreshCurrent', async () => {
+		await getCurrentProjects()
 		currentTreeViewProvider.refresh()
 	});
 
 	/** 刷新“收藏夹” */
-	const refreshFavoritedDisposable = vscode.commands.registerCommand('project-manager.refreshFavorited', () => {
+	const refreshFavoritedDisposable = vscode.commands.registerCommand('project-manager.refreshFavorite', async () => {
+		context.globalState.update("favorite", store.favorite)
+		getFavoriteProjects(context)
 		favoriteTreeProvider.refresh()
 	});
 
+	const search = async (options: ProjectItemProps[]) => {
+		const quickPick = vscode.window.createQuickPick();
+		quickPick.placeholder = '选中以打开';
+		quickPick.matchOnDescription = true
+		quickPick.items = options.map(item => {
+			return {
+				...item,
+				label: item.name,
+				description: item.branchName,
+				buttons: [
+					{
+						iconPath: vscode.Uri.file(path.resolve(__dirname, "../images/open-new-sm.svg")),
+						tooltip: "在新窗口打开"
+					}
+				]
+			}
+		})
+
+		quickPick.show();
+		quickPick.onDidChangeSelection(selection => {
+			const item = selection[0] as unknown as ProjectItemProps;
+			openFolder(item)
+			quickPick.hide()
+		});
+
+		quickPick.onDidTriggerItemButton(({ item }) => {
+			openFolder(item as unknown as ProjectItemProps, true)
+			quickPick.hide()
+		})
+	}
+
+	/** 搜索最近 */
+	vscode.commands.registerCommand('project-manager.searchCurrent', () => {
+		search(store.current)
+	});
+
+	/** 搜索收藏夹 */
+	vscode.commands.registerCommand('project-manager.searchFavorite', () => {
+		const favorite = getFavoriteProjects(context)
+		search(favorite)
+	});
+
 	/** 复制出一个新项目 */
-	const copyDisposable = vscode.commands.registerCommand('project-manager.copy', ({ item: project }) => {
+	const copyDisposable = vscode.commands.registerCommand('project-manager.copy', async ({ item: project }) => {
 		const { path: dirPath, name } = project
 		const parentPath = path.dirname(dirPath)
 		const fileNames = fs.readdirSync(parentPath)
@@ -88,16 +147,19 @@ export async function activate(context: vscode.ExtensionContext) {
 		})
 		const folderUri = vscode.Uri.file(newPath);
 		vscode.commands.executeCommand('vscode.openFolder', folderUri, true);
-		currentTreeViewProvider.refresh()
+		setTimeout(async () => {
+			await getCurrentProjects()
+			currentTreeViewProvider.refresh()
+		}, 1000)
 	});
-	  
+
 
 	context.subscriptions.push(
 		disposable, openProjectDisposable, openNewProjectDisposable,
 		copyDisposable, refreshCurrentDisposable, favoriteDisposable, favoritedDisposable,
-		refreshFavoritedDisposable,
+		refreshFavoritedDisposable
 	);
 }
 
 // This method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate() { }
