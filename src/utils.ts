@@ -105,6 +105,11 @@ export function copyFolder(sourceDir: string, targetDir: string, options?: {
 export const getFavoriteProjects = (context: vscode.ExtensionContext) => {
   const state = context.globalState
   const favorite: ProjectItemProps[] = state.get("favorite") || []
-  store.favorite = favorite.filter(item => !!item)
+  store.favorite = favorite.filter(item => !!item).map(item => {
+    return {
+      ...item,
+      branchName: getBranchName(item.path)
+    }
+  })
   return store.favorite
 }

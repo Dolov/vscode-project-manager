@@ -3,7 +3,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import { debounce } from 'lodash'
+import { debounce, uniqBy } from 'lodash'
 import { CurrentProvider, FavoriteProvider } from './TreeDataProvider'
 import { ProjectItemProps, copyFolder, increName, getFavoriteProjects, store, getCurrentProjects } from './utils'
 
@@ -47,10 +47,23 @@ export async function activate(context: vscode.ExtensionContext) {
 	});
 
 	/** 提供“收藏夹”视图节点数据 */
-	const favoriteTreeProvider = new FavoriteProvider(rootPath)
-	vscode.window.createTreeView('favorite', {
-		treeDataProvider: favoriteTreeProvider
+	const favoriteTreeViewProvider = new FavoriteProvider(rootPath)
+	const favoriteTreeView = vscode.window.createTreeView('favorite', {
+		treeDataProvider: favoriteTreeViewProvider
 	});
+
+	/** 提供“最近使用”视图节点数据 */
+	const currentTreeViewProvider = new CurrentProvider(rootPath)
+	const currentTreeView = vscode.window.createTreeView('current', {
+		treeDataProvider: currentTreeViewProvider
+	});
+	
+	const updateTreeViewTitle = () => {
+		currentTreeView.title = `最近使用（${currentTreeViewProvider.count}）`
+		favoriteTreeView.title = `收藏夹（${favoriteTreeViewProvider.count}）`
+	}
+
+	updateTreeViewTitle()
 
 	const debounceStorage = debounce(async () => {
 		context.globalState.update("favorite", store.favorite)
@@ -59,9 +72,10 @@ export async function activate(context: vscode.ExtensionContext) {
 	/** 加入“收藏” */
 	const favoriteDisposable = vscode.commands.registerCommand('project-manager.favorite', ({ item: project }) => {
 		store.favorite.push(project)
-		favoriteTreeProvider.refresh()
+		favoriteTreeViewProvider.refresh()
 		currentTreeViewProvider.refresh()
 		debounceStorage()
+		updateTreeViewTitle()
 	});
 
 	/** 取消“收藏” */
@@ -69,15 +83,10 @@ export async function activate(context: vscode.ExtensionContext) {
 		const index = store.favorite.findIndex(item => item.path === project.path)
 		if (index === -1) return
 		store.favorite.splice(index, 1)
-		favoriteTreeProvider.refresh()
+		favoriteTreeViewProvider.refresh()
 		currentTreeViewProvider.refresh()
 		debounceStorage()
-	});
-
-	/** 提供“最近使用”视图节点数据 */
-	const currentTreeViewProvider = new CurrentProvider(rootPath)
-	vscode.window.createTreeView('current', {
-		treeDataProvider: currentTreeViewProvider
+		updateTreeViewTitle()
 	});
 
 	/** 刷新“最近使用” */
@@ -90,7 +99,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	const refreshFavoritedDisposable = vscode.commands.registerCommand('project-manager.refreshFavorite', async () => {
 		context.globalState.update("favorite", store.favorite)
 		getFavoriteProjects(context)
-		favoriteTreeProvider.refresh()
+		favoriteTreeViewProvider.refresh()
 	});
 
 	const search = async (options: ProjectItemProps[]) => {
@@ -124,6 +133,12 @@ export async function activate(context: vscode.ExtensionContext) {
 		})
 	}
 
+	/** 搜索 */
+	vscode.commands.registerCommand('project-manager.search', () => {
+		const allData = uniqBy([...store.favorite, ...store.current], "path")
+		search(allData)
+	});
+
 	/** 搜索最近 */
 	vscode.commands.registerCommand('project-manager.searchCurrent', () => {
 		search(store.current)
@@ -131,8 +146,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	/** 搜索收藏夹 */
 	vscode.commands.registerCommand('project-manager.searchFavorite', () => {
-		const favorite = getFavoriteProjects(context)
-		search(favorite)
+		search(store.favorite)
 	});
 
 	/** 复制出一个新项目 */

@@ -42,27 +42,34 @@
       "projectManager.sideBar.current.title": [],
       "view/item/context": [
         {
-          "command": "project-manager.openInNew",
-          "when": "view == current || view == favorite",
-          "group": "inline"
-        },
-        {
           "command": "project-manager.copy",
           "when": "view == current || view == favorite",
-          "group": "inline"
+          "group": "inline@1"
         },
         {
           "command": "project-manager.favorite",
           "when": "viewItem == favorite",
-          "group": "inline"
+          "group": "inline@2"
         },
         {
           "command": "project-manager.favorited",
           "when": "viewItem == favorited",
-          "group": "inline"
+          "group": "inline@2"
+        },
+        {
+          "command": "project-manager.openInNew",
+          "when": "view == current || view == favorite",
+          "group": "inline@3"
         }
       ]
     },
+    "keybindings": [
+      {
+        "command": "project-manager.search",
+        "key": "ctrl+r",
+        "mac": "ctrl+r"
+      }
+    ],
     "commands": [
       {
         "command": "project-manager.helloWorld",
@@ -107,6 +114,10 @@
         "command": "project-manager.searchFavorite",
         "title": "搜索",
         "icon": "images/search.svg"
+      },
+      {
+        "command": "project-manager.search",
+        "title": "搜索"
       }
     ],
     "viewsContainers": {

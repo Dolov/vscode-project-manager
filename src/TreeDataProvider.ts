@@ -13,6 +13,10 @@ export class CurrentProvider implements vscode.TreeDataProvider<Project> {
 	constructor(private workspaceRoot: string | undefined) {
 	}
 
+	get count() {
+		return store.current.length
+	}
+
 	getTreeItem(element: Project): vscode.TreeItem {
 		return element;
 	}
@@ -39,6 +43,10 @@ export class FavoriteProvider implements vscode.TreeDataProvider<Project> {
   }
 
 	constructor(private workspaceRoot: string | undefined) {
+	}
+
+	get count() {
+		return store.favorite.length
 	}
 
 	getTreeItem(element: Project): vscode.TreeItem {
