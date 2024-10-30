@@ -86,6 +86,9 @@ export class Project extends vscode.TreeItem {
     super(name);
     this.iconPath = new vscode.ThemeIcon("folder");
     this.tooltip = `${name}`;
+    if (branchName) {
+      this.tooltip += ` (${branchName})`;
+    }
 
     this.description = branchName;
     this.command = {
