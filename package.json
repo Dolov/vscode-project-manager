@@ -132,12 +132,12 @@
     "views": {
       "projectManager": [
         {
-          "id": "current",
-          "name": "最近使用"
-        },
-        {
           "id": "favorite",
           "name": "收藏夹"
+        },
+        {
+          "id": "current",
+          "name": "最近使用"
         }
       ]
     }
