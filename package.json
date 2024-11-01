@@ -47,6 +47,11 @@
           "group": "inline@1"
         },
         {
+          "command": "project-manager.rename",
+          "when": "view == favorite",
+          "group": "inline@1"
+        },
+        {
           "command": "project-manager.favorite",
           "when": "viewItem == favorite",
           "group": "inline@2"
@@ -79,6 +84,11 @@
         "command": "project-manager.openInNew",
         "title": "在新窗口中打开",
         "icon": "images/open-new.svg"
+      },
+      {
+        "command": "project-manager.rename",
+        "title": "重命名",
+        "icon": "images/rename.svg"
       },
       {
         "command": "project-manager.copy",

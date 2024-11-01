@@ -117,23 +117,27 @@ export async function activate(context: vscode.ExtensionContext) {
     }
   );
 
+  const refreshCurrent = async () => {
+    await getCurrentProjects();
+    currentTreeViewProvider.refresh();
+  };
+
+  const refreshFavorite = () => {
+    context.globalState.update("favorite", store.favorite);
+    getFavoriteProjects(context);
+    favoriteTreeViewProvider.refresh();
+  };
+
   /** 刷新“最近使用” */
   const refreshCurrentDisposable = vscode.commands.registerCommand(
     "project-manager.refreshCurrent",
-    async () => {
-      await getCurrentProjects();
-      currentTreeViewProvider.refresh();
-    }
+    refreshCurrent
   );
 
   /** 刷新“收藏夹” */
   const refreshFavoritedDisposable = vscode.commands.registerCommand(
     "project-manager.refreshFavorite",
-    async () => {
-      context.globalState.update("favorite", store.favorite);
-      getFavoriteProjects(context);
-      favoriteTreeViewProvider.refresh();
-    }
+    refreshFavorite
   );
 
   const search = async (options: ProjectItemProps[]) => {
@@ -208,6 +212,36 @@ export async function activate(context: vscode.ExtensionContext) {
         await getCurrentProjects();
         currentTreeViewProvider.refresh();
       }, 1000);
+    }
+  );
+
+  /** 项目重命名 */
+  const renameDisposable = vscode.commands.registerCommand(
+    "project-manager.rename",
+    async ({ item: project }) => {
+      const { path: dirPath, name } = project;
+      const renameProject = store.favorite.find(
+        (item) => item.path === dirPath
+      );
+      if (!renameProject) return;
+      const parentPath = path.dirname(dirPath);
+      const newInputName = await vscode.window.showInputBox({
+        placeHolder: "请输入项目名称",
+        prompt: "请输入项目名称",
+        value: name,
+      });
+      if (!newInputName) return;
+      const newPath = `${parentPath}/${newInputName}`;
+      fs.renameSync(dirPath, newPath);
+
+      renameProject.name = newInputName;
+      renameProject.path = newPath;
+
+      setTimeout(async () => {
+        await refreshCurrent();
+        refreshFavorite();
+        debounceStorage();
+      }, 300);
     }
   );
 
