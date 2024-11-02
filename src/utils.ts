@@ -56,6 +56,7 @@ export class DataSource {
   async init() {
     this.recently = await this.getRecentlyOpened();
     this.favorite = this.getFavorite(this.context);
+    this.fire();
   }
 
   // 通知监听者数据发生变化，需要更新视图

@@ -35,12 +35,11 @@ export async function activate(context: vscode.ExtensionContext) {
     treeDataProvider: currentTreeViewProvider,
   });
 
-  currentTreeViewProvider.attachTreeView(currentTreeView, "最近使用");
-  favoriteTreeViewProvider.attachTreeView(favoriteTreeView, "收藏夹");
-
   dataSource.addEventListener(() => {
     currentTreeViewProvider.refresh();
     favoriteTreeViewProvider.refresh();
+    currentTreeView.title = `最近使用 (${dataSource.recently.length})`;
+    favoriteTreeView.title = `收藏夹 (${dataSource.favorite.length})`;
   });
 
   // 在当前窗口打开项目

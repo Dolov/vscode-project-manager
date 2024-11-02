@@ -7,27 +7,13 @@ abstract class BaseProvider implements vscode.TreeDataProvider<Project> {
   >();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
-  treeView?: vscode.TreeView<Project>;
-  treeViewTitleTemplate?: string;
   constructor(public dataSource: DataSource) {}
 
   abstract get count(): number;
   abstract getItems(): ProjectItemProps[];
 
   refresh() {
-    this.updateTitle();
     this._onDidChangeTreeData.fire();
-  }
-
-  attachTreeView(treeView: vscode.TreeView<Project>, titleTemplate: string) {
-    this.treeView = treeView;
-    this.treeViewTitleTemplate = titleTemplate;
-    this.updateTitle();
-  }
-
-  updateTitle() {
-    if (!this.treeView) return;
-    this.treeView.title = `${this.treeViewTitleTemplate} (${this.count})`;
   }
 
   getTreeItem(element: Project): vscode.TreeItem {
