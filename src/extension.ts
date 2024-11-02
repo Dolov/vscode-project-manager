@@ -4,7 +4,7 @@ import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
 import { uniqBy } from "lodash";
-import { CurrentProvider, FavoriteProvider } from "./TreeDataProvider";
+import { RecentlyProvider, FavoriteProvider } from "./TreeDataProvider";
 import { ProjectItemProps, copyFolder, increName, DataSource } from "./utils";
 
 const openFolder = (project: ProjectItemProps, newWin?: boolean) => {
@@ -25,20 +25,20 @@ export async function activate(context: vscode.ExtensionContext) {
   /** 提供“收藏夹”视图节点数据 */
   const favoriteTreeViewProvider = new FavoriteProvider(dataSource);
   /** 提供“最近使用”视图节点数据 */
-  const currentTreeViewProvider = new CurrentProvider(dataSource);
+  const recentlyTreeViewProvider = new RecentlyProvider(dataSource);
 
   const favoriteTreeView = vscode.window.createTreeView("favorite", {
     treeDataProvider: favoriteTreeViewProvider,
   });
 
-  const currentTreeView = vscode.window.createTreeView("recently", {
-    treeDataProvider: currentTreeViewProvider,
+  const recentlyTreeView = vscode.window.createTreeView("recently", {
+    treeDataProvider: recentlyTreeViewProvider,
   });
 
   dataSource.addEventListener(() => {
-    currentTreeViewProvider.refresh();
+    recentlyTreeViewProvider.refresh();
     favoriteTreeViewProvider.refresh();
-    currentTreeView.title = `最近使用 (${dataSource.recently.length})`;
+    recentlyTreeView.title = `最近使用 (${dataSource.recently.length})`;
     favoriteTreeView.title = `收藏夹 (${dataSource.favorite.length})`;
   });
 
@@ -75,8 +75,8 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   /** 刷新“最近使用” */
-  const refreshCurrentDisposable = vscode.commands.registerCommand(
-    "project-manager.refreshCurrent",
+  const refreshRecentlyDisposable = vscode.commands.registerCommand(
+    "project-manager.refreshRecently",
     () => {
       dataSource.init();
     }
@@ -133,7 +133,7 @@ export async function activate(context: vscode.ExtensionContext) {
   });
 
   /** 搜索最近 */
-  vscode.commands.registerCommand("project-manager.searchCurrent", () => {
+  vscode.commands.registerCommand("project-manager.searchRecently", () => {
     search(dataSource.recently);
   });
 
@@ -162,7 +162,7 @@ export async function activate(context: vscode.ExtensionContext) {
       const folderUri = vscode.Uri.file(newPath);
       vscode.commands.executeCommand("vscode.openFolder", folderUri, true);
       setTimeout(() => {
-        currentTreeViewProvider.refresh();
+        recentlyTreeViewProvider.refresh();
       }, 1000);
     }
   );
@@ -198,7 +198,7 @@ export async function activate(context: vscode.ExtensionContext) {
     favoriteDisposable,
     favoritedDisposable,
     renameDisposable,
-    refreshCurrentDisposable,
+    refreshRecentlyDisposable,
     refreshFavoritedDisposable
   );
 }

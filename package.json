@@ -19,7 +19,7 @@
     "menus": {
       "view/title": [
         {
-          "command": "project-manager.searchCurrent",
+          "command": "project-manager.searchRecently",
           "when": "view == recently",
           "group": "navigation@1"
         },
@@ -29,7 +29,7 @@
           "group": "navigation@1"
         },
         {
-          "command": "project-manager.refreshCurrent",
+          "command": "project-manager.refreshRecently",
           "when": "view == recently",
           "group": "navigation@2"
         },
@@ -105,7 +105,7 @@
         "icon": "images/favorited.svg"
       },
       {
-        "command": "project-manager.refreshCurrent",
+        "command": "project-manager.refreshRecently",
         "title": "刷新",
         "icon": "images/refresh.svg"
       },
@@ -115,7 +115,7 @@
         "icon": "images/refresh.svg"
       },
       {
-        "command": "project-manager.searchCurrent",
+        "command": "project-manager.searchRecently",
         "title": "搜索",
         "icon": "images/search.svg"
       },

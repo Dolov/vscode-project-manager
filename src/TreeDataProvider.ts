@@ -30,7 +30,7 @@ abstract class BaseProvider implements vscode.TreeDataProvider<Project> {
   }
 }
 
-export class CurrentProvider extends BaseProvider {
+export class RecentlyProvider extends BaseProvider {
   get count() {
     return this.dataSource.recently.length;
   }
