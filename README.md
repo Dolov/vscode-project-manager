@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/Dolov/vscode-project-manager/d92f35932d87b5692867752a4563fcb7f576123c/icon.svg" width="186" />
+<img src="https://raw.githubusercontent.com/Dolov/vscode-project-manager/d92f35932d87b5692867752a4563fcb7f576123c/icon.png" width="186" />
 
 # 🌟 Project Manager Next
 
