@@ -1,77 +1,66 @@
 import * as vscode from "vscode";
-import { ProjectItemProps, getBranchName, store } from "./utils";
+import { ProjectItemProps, getBranchName, DataSource } from "./utils";
 
-export class CurrentProvider implements vscode.TreeDataProvider<Project> {
-  private _onDidChangeTreeData: vscode.EventEmitter<
+abstract class BaseProvider implements vscode.TreeDataProvider<Project> {
+  protected _onDidChangeTreeData = new vscode.EventEmitter<
     Project | undefined | null | void
-  > = new vscode.EventEmitter<Project | undefined | null | void>();
-  readonly onDidChangeTreeData: vscode.Event<
-    Project | undefined | null | void
-  > = this._onDidChangeTreeData.event;
+  >();
+  readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
-  async refresh() {
+  treeView?: vscode.TreeView<Project>;
+  treeViewTitleTemplate?: string;
+  constructor(public dataSource: DataSource) {}
+
+  abstract get count(): number;
+  abstract getItems(): ProjectItemProps[];
+
+  refresh() {
+    this.updateTitle();
     this._onDidChangeTreeData.fire();
   }
 
-  constructor(private workspaceRoot: string | undefined) {}
+  attachTreeView(treeView: vscode.TreeView<Project>, titleTemplate: string) {
+    this.treeView = treeView;
+    this.treeViewTitleTemplate = titleTemplate;
+    this.updateTitle();
+  }
 
-  get count() {
-    return store.current.length;
+  updateTitle() {
+    if (!this.treeView) return;
+    this.treeView.title = `${this.treeViewTitleTemplate} (${this.count})`;
   }
 
   getTreeItem(element: Project): vscode.TreeItem {
     return element;
   }
 
-  getChildren(element?: Project): Thenable<Project[]> {
-    const favorites: ProjectItemProps[] = store.favorite;
-    return new Promise(async (resolve) => {
-      const items = store.current.map((item) => {
-        return new Project(item, favorites);
-      });
-      resolve(items);
+  async getChildren(element?: Project): Promise<Project[]> {
+    const favoriteList = this.dataSource.favorite;
+    const items = this.getItems().map((item) => {
+      const branchName = item.branchName || getBranchName(item.path);
+      return new Project({ ...item, branchName }, favoriteList);
     });
+    return items;
   }
 }
 
-export class FavoriteProvider implements vscode.TreeDataProvider<Project> {
-  private _onDidChangeTreeData: vscode.EventEmitter<
-    Project | undefined | null | void
-  > = new vscode.EventEmitter<Project | undefined | null | void>();
-  readonly onDidChangeTreeData: vscode.Event<
-    Project | undefined | null | void
-  > = this._onDidChangeTreeData.event;
-
-  async refresh() {
-    this._onDidChangeTreeData.fire();
-  }
-
-  constructor(private workspaceRoot: string | undefined) {}
-
+export class CurrentProvider extends BaseProvider {
   get count() {
-    return store.favorite.length;
+    return this.dataSource.recently.length;
   }
 
-  getTreeItem(element: Project): vscode.TreeItem {
-    return element;
+  getItems() {
+    return this.dataSource.recently;
+  }
+}
+
+export class FavoriteProvider extends BaseProvider {
+  get count() {
+    return this.dataSource.favorite.length;
   }
 
-  getChildren(element?: Project): Thenable<Project[]> {
-    return new Promise(async (resolve) => {
-      const projects: ProjectItemProps[] = store.favorite;
-      const items = projects.map((itemc) => {
-        const { path } = itemc;
-        const branchName = getBranchName(path);
-        return new Project(
-          {
-            ...itemc,
-            branchName,
-          },
-          projects
-        );
-      });
-      resolve(items);
-    });
+  getItems() {
+    return this.dataSource.favorite;
   }
 }
 
@@ -80,25 +69,20 @@ export class Project extends vscode.TreeItem {
 
   constructor(
     public readonly item: ProjectItemProps,
-    public readonly config: ProjectItemProps[]
+    favoriteList: ProjectItemProps[]
   ) {
     const { path, name, branchName } = item;
     super(name);
     this.iconPath = new vscode.ThemeIcon("folder");
-    this.tooltip = `${name}`;
-    if (branchName) {
-      this.tooltip += ` (${branchName})`;
-    }
-
-    this.description = branchName;
+    this.tooltip = branchName ? `${name} (${branchName})` : name;
+    this.description = branchName || "";
     this.command = {
       title: "Open Project",
       command: "project-manager.openProject",
       arguments: [item],
     };
 
-    const target = config.find((item) => item.path === path);
-    if (target) {
+    if (favoriteList.some((favorite) => favorite.path === path)) {
       this.contextValue = "favorited";
     }
   }

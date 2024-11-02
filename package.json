@@ -20,7 +20,7 @@
       "view/title": [
         {
           "command": "project-manager.searchCurrent",
-          "when": "view == current",
+          "when": "view == recently",
           "group": "navigation@1"
         },
         {
@@ -30,7 +30,7 @@
         },
         {
           "command": "project-manager.refreshCurrent",
-          "when": "view == current",
+          "when": "view == recently",
           "group": "navigation@2"
         },
         {
@@ -39,11 +39,10 @@
           "group": "navigation@2"
         }
       ],
-      "projectManager.sideBar.current.title": [],
       "view/item/context": [
         {
           "command": "project-manager.copy",
-          "when": "view == current || view == favorite",
+          "when": "view == recently || view == favorite",
           "group": "inline@1"
         },
         {
@@ -63,7 +62,7 @@
         },
         {
           "command": "project-manager.openInNew",
-          "when": "view == current || view == favorite",
+          "when": "view == recently || view == favorite",
           "group": "inline@3"
         }
       ]
@@ -143,11 +142,11 @@
       "projectManager": [
         {
           "id": "favorite",
-          "name": "收藏夹"
+          "name": ""
         },
         {
-          "id": "current",
-          "name": "最近使用"
+          "id": "recently",
+          "name": ""
         }
       ]
     }

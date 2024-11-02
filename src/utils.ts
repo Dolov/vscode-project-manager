@@ -2,20 +2,7 @@ import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
 import { execSync } from "child_process";
-
-export const getBranchName = (folderPath: string) => {
-  try {
-    // 执行 git 命令获取分支名称
-    const branchName = execSync("git rev-parse --abbrev-ref HEAD", {
-      cwd: folderPath,
-    })
-      .toString()
-      .trim();
-    return branchName;
-  } catch (error) {
-    return "";
-  }
-};
+import { debounce } from "lodash";
 
 export interface ProjectItemProps {
   name: string;
@@ -23,40 +10,122 @@ export interface ProjectItemProps {
   branchName?: string;
 }
 
-export const store: {
-  current: ProjectItemProps[];
-  favorite: ProjectItemProps[];
-} = {
-  current: [],
-  favorite: [],
-};
+export const getBranchName = (folderPath: string): string => {
+  try {
+    // 检查是否为 Git 仓库
+    if (!fs.existsSync(path.join(folderPath, ".git"))) {
+      console.warn(`No Git repository found in folder: ${folderPath}`);
+      return "";
+    }
 
-export const getCurrentProjects = async () => {
-  const opened = await vscode.commands.executeCommand(
-    "_workbench.getRecentlyOpened"
-  );
-  // @ts-ignore
-  const workspaces = opened.workspaces || [];
-
-  store.current = workspaces
-    .filter((workspace: any) => {
-      const originPath: string = workspace?.folderUri?.path || "";
-      return fs.existsSync(originPath);
+    // 获取当前目录下的 Git 分支名称
+    const branchName = execSync("git rev-parse --abbrev-ref HEAD", {
+      cwd: folderPath,
+      stdio: ["ignore", "pipe", "ignore"],
     })
-    .map((workspace: any) => {
-      const originPath: string = workspace?.folderUri?.path || "";
-      const originPathArr = originPath.split("/");
-      const name = originPathArr.pop();
-      const path = workspace?.folderUri?.path || "";
-      return {
-        name,
-        path,
-        branchName: getBranchName(path),
-      };
-    });
+      .toString()
+      .trim();
 
-  return store.current;
+    return branchName || "";
+  } catch (error) {
+    console.error(`Failed to get branch name for folder: ${folderPath}`, error);
+    return "";
+  }
 };
+
+export class DataSource {
+  context: vscode.ExtensionContext;
+  public recently: ProjectItemProps[] = [];
+  public favorite: ProjectItemProps[] = [];
+  private listeners: (() => void)[] = [];
+  private debounceUpdateFavorite: (favorite: ProjectItemProps[]) => void;
+
+  constructor(context: vscode.ExtensionContext) {
+    this.recently = [];
+    this.favorite = [];
+    this.context = context;
+    this.init();
+    this.debounceUpdateFavorite = debounce(async (favorite) => {
+      const state = this.context.globalState;
+      state.update("favorite", favorite);
+      this.init();
+    }, 500);
+  }
+
+  async init() {
+    this.recently = await this.getRecentlyOpened();
+    this.favorite = this.getFavorite(this.context);
+    for (const listener of this.listeners) {
+      listener();
+    }
+  }
+
+  addEventListener(listener: () => void) {
+    this.listeners = [...this.listeners, listener];
+    return () => {
+      this.listeners = this.listeners.filter((l) => l !== listener);
+    };
+  }
+
+  private getFavorite(context: vscode.ExtensionContext) {
+    const state = context.globalState;
+    const favorite: ProjectItemProps[] = state.get("favorite") || [];
+    return favorite
+      .filter((item) => !!item)
+      .map((item) => {
+        return {
+          ...item,
+          branchName: getBranchName(item.path),
+        };
+      });
+  }
+
+  private async getRecentlyOpened() {
+    // 获取最近打开的工作区列表
+    const opened = await vscode.commands.executeCommand<{
+      workspaces?: Array<{ folderUri?: vscode.Uri }>;
+    }>("_workbench.getRecentlyOpened");
+
+    const workspaces = opened?.workspaces ?? [];
+
+    return workspaces
+      .filter((workspace) => {
+        const folderUriPath = workspace.folderUri?.path || "";
+        return fs.existsSync(folderUriPath);
+      })
+      .map((workspace) => {
+        const folderUriPath = workspace.folderUri?.path || "";
+        return {
+          name: path.basename(folderUriPath),
+          path: folderUriPath,
+          branchName: getBranchName(folderUriPath),
+        };
+      });
+  }
+
+  addFavorite(project: ProjectItemProps) {
+    this.favorite.push(project);
+    this.debounceUpdateFavorite(this.favorite);
+  }
+
+  removeFavorite(project: ProjectItemProps) {
+    const index = this.favorite.findIndex((item) => item.path === project.path);
+    if (index !== -1) {
+      this.favorite.splice(index, 1);
+      this.debounceUpdateFavorite(this.favorite);
+    }
+  }
+
+  renameFavorite(oldProject: ProjectItemProps, newProject: ProjectItemProps) {
+    const index = this.favorite.findIndex(
+      (item) => item.path === oldProject.path
+    );
+    if (index !== -1) {
+      this.favorite[index] = newProject;
+      this.debounceUpdateFavorite(this.favorite);
+    }
+  }
+}
 
 /** 数字结尾 */
 export const endWithNumber = /\d+$/;
@@ -64,7 +133,9 @@ export const endWithNumber = /\d+$/;
 /** 递增名称 */
 export const increName = (name: string, names: string[]): string => {
   const exist = names.includes(name);
-  if (!exist) return name;
+  if (!exist) {
+    return name;
+  }
   const match = name.match(endWithNumber);
   if (match) {
     const number = parseInt(match[0]);
@@ -107,17 +178,3 @@ export function copyFolder(
     }
   });
 }
-
-export const getFavoriteProjects = (context: vscode.ExtensionContext) => {
-  const state = context.globalState;
-  const favorite: ProjectItemProps[] = state.get("favorite") || [];
-  store.favorite = favorite
-    .filter((item) => !!item)
-    .map((item) => {
-      return {
-        ...item,
-        branchName: getBranchName(item.path),
-      };
-    });
-  return store.favorite;
-};

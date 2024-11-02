@@ -3,52 +3,45 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
-import { debounce, uniqBy } from "lodash";
+import { uniqBy } from "lodash";
 import { CurrentProvider, FavoriteProvider } from "./TreeDataProvider";
-import {
-  ProjectItemProps,
-  copyFolder,
-  increName,
-  getFavoriteProjects,
-  store,
-  getCurrentProjects,
-} from "./utils";
+import { ProjectItemProps, copyFolder, increName, DataSource } from "./utils";
+
+const openFolder = (project: ProjectItemProps, newWin?: boolean) => {
+  const { path } = project;
+  const folderUri = vscode.Uri.file(path);
+  vscode.commands.executeCommand("vscode.openFolder", folderUri, newWin);
+};
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
-  await getCurrentProjects();
-  getFavoriteProjects(context);
-
-  const rootPath =
-    vscode.workspace.workspaceFolders &&
-    vscode.workspace.workspaceFolders.length > 0
-      ? vscode.workspace.workspaceFolders[0].uri.fsPath
-      : undefined;
-
-  // Use the console to output diagnostic information (console.log) and errors (console.error)
-  // This line of code will only be executed once when your extension is activated
   console.log(
-    'Congratulations, your extension "project-manager" is now active!'
+    'Congratulations, your extension "project-manager" is now active!!!!!!!!!!!!!!!!!!!!!!!!!!'
   );
 
-  // The command has been defined in the package.json file
-  // Now provide the implementation of the command with registerCommand
-  // The commandId parameter must match the command field in package.json
-  const disposable = vscode.commands.registerCommand(
-    "project-manager.helloWorld",
-    () => {
-      // The code you place here will be executed every time your command is executed
-      // Display a message box to the user
-      vscode.window.showInformationMessage("Hello World from project-manager!");
-    }
-  );
+  const dataSource = new DataSource(context);
 
-  const openFolder = (project: ProjectItemProps, newWin?: boolean) => {
-    const { path } = project;
-    const folderUri = vscode.Uri.file(path);
-    vscode.commands.executeCommand("vscode.openFolder", folderUri, newWin);
-  };
+  /** 提供“收藏夹”视图节点数据 */
+  const favoriteTreeViewProvider = new FavoriteProvider(dataSource);
+  /** 提供“最近使用”视图节点数据 */
+  const currentTreeViewProvider = new CurrentProvider(dataSource);
+
+  const favoriteTreeView = vscode.window.createTreeView("favorite", {
+    treeDataProvider: favoriteTreeViewProvider,
+  });
+
+  const currentTreeView = vscode.window.createTreeView("recently", {
+    treeDataProvider: currentTreeViewProvider,
+  });
+
+  currentTreeViewProvider.attachTreeView(currentTreeView, "最近使用");
+  favoriteTreeViewProvider.attachTreeView(favoriteTreeView, "收藏夹");
+
+  dataSource.addEventListener(() => {
+    currentTreeViewProvider.refresh();
+    favoriteTreeViewProvider.refresh();
+  });
 
   // 在当前窗口打开项目
   const openProjectDisposable = vscode.commands.registerCommand(
@@ -66,78 +59,36 @@ export async function activate(context: vscode.ExtensionContext) {
     }
   );
 
-  /** 提供“收藏夹”视图节点数据 */
-  const favoriteTreeViewProvider = new FavoriteProvider(rootPath);
-  const favoriteTreeView = vscode.window.createTreeView("favorite", {
-    treeDataProvider: favoriteTreeViewProvider,
-  });
-
-  /** 提供“最近使用”视图节点数据 */
-  const currentTreeViewProvider = new CurrentProvider(rootPath);
-  const currentTreeView = vscode.window.createTreeView("current", {
-    treeDataProvider: currentTreeViewProvider,
-  });
-
-  const updateTreeViewTitle = () => {
-    currentTreeView.title = `最近使用（${currentTreeViewProvider.count}）`;
-    favoriteTreeView.title = `收藏夹（${favoriteTreeViewProvider.count}）`;
-  };
-
-  updateTreeViewTitle();
-
-  const debounceStorage = debounce(async () => {
-    context.globalState.update("favorite", store.favorite);
-  }, 2000);
-
   /** 加入“收藏” */
   const favoriteDisposable = vscode.commands.registerCommand(
     "project-manager.favorite",
-    ({ item: project }) => {
-      store.favorite.push(project);
-      favoriteTreeViewProvider.refresh();
-      currentTreeViewProvider.refresh();
-      debounceStorage();
-      updateTreeViewTitle();
+    ({ item }) => {
+      dataSource.addFavorite(item);
     }
   );
 
   /** 取消“收藏” */
   const favoritedDisposable = vscode.commands.registerCommand(
     "project-manager.favorited",
-    ({ item: project }) => {
-      const index = store.favorite.findIndex(
-        (item) => item.path === project.path
-      );
-      if (index === -1) return;
-      store.favorite.splice(index, 1);
-      favoriteTreeViewProvider.refresh();
-      currentTreeViewProvider.refresh();
-      debounceStorage();
-      updateTreeViewTitle();
+    ({ item }) => {
+      dataSource.removeFavorite(item);
     }
   );
-
-  const refreshCurrent = async () => {
-    await getCurrentProjects();
-    currentTreeViewProvider.refresh();
-  };
-
-  const refreshFavorite = () => {
-    context.globalState.update("favorite", store.favorite);
-    getFavoriteProjects(context);
-    favoriteTreeViewProvider.refresh();
-  };
 
   /** 刷新“最近使用” */
   const refreshCurrentDisposable = vscode.commands.registerCommand(
     "project-manager.refreshCurrent",
-    refreshCurrent
+    () => {
+      dataSource.init();
+    }
   );
 
   /** 刷新“收藏夹” */
   const refreshFavoritedDisposable = vscode.commands.registerCommand(
     "project-manager.refreshFavorite",
-    refreshFavorite
+    () => {
+      dataSource.init();
+    }
   );
 
   const search = async (options: ProjectItemProps[]) => {
@@ -175,18 +126,21 @@ export async function activate(context: vscode.ExtensionContext) {
 
   /** 搜索 */
   vscode.commands.registerCommand("project-manager.search", () => {
-    const allData = uniqBy([...store.favorite, ...store.current], "path");
+    const allData = uniqBy(
+      [...dataSource.favorite, ...dataSource.recently],
+      "path"
+    );
     search(allData);
   });
 
   /** 搜索最近 */
   vscode.commands.registerCommand("project-manager.searchCurrent", () => {
-    search(store.current);
+    search(dataSource.recently);
   });
 
   /** 搜索收藏夹 */
   vscode.commands.registerCommand("project-manager.searchFavorite", () => {
-    search(store.favorite);
+    search(dataSource.favorite);
   });
 
   /** 复制出一个新项目 */
@@ -208,8 +162,7 @@ export async function activate(context: vscode.ExtensionContext) {
       });
       const folderUri = vscode.Uri.file(newPath);
       vscode.commands.executeCommand("vscode.openFolder", folderUri, true);
-      setTimeout(async () => {
-        await getCurrentProjects();
+      setTimeout(() => {
         currentTreeViewProvider.refresh();
       }, 1000);
     }
@@ -220,10 +173,7 @@ export async function activate(context: vscode.ExtensionContext) {
     "project-manager.rename",
     async ({ item: project }) => {
       const { path: dirPath, name } = project;
-      const renameProject = store.favorite.find(
-        (item) => item.path === dirPath
-      );
-      if (!renameProject) return;
+
       const parentPath = path.dirname(dirPath);
       const newInputName = await vscode.window.showInputBox({
         placeHolder: "请输入项目名称",
@@ -234,25 +184,22 @@ export async function activate(context: vscode.ExtensionContext) {
       const newPath = `${parentPath}/${newInputName}`;
       fs.renameSync(dirPath, newPath);
 
-      renameProject.name = newInputName;
-      renameProject.path = newPath;
-
-      setTimeout(async () => {
-        await refreshCurrent();
-        refreshFavorite();
-        debounceStorage();
-      }, 300);
+      dataSource.renameFavorite(project, {
+        ...project,
+        name: newInputName,
+        path: newPath,
+      });
     }
   );
 
   context.subscriptions.push(
-    disposable,
     openProjectDisposable,
     openNewProjectDisposable,
     copyDisposable,
-    refreshCurrentDisposable,
     favoriteDisposable,
     favoritedDisposable,
+    renameDisposable,
+    refreshCurrentDisposable,
     refreshFavoritedDisposable
   );
 }
