@@ -2,7 +2,7 @@
   "name": "project-manager-next",
   "displayName": "Project Manager Next",
   "description": "Easily manage multiple projects and branches",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "publisher": "Dolov",
   "engines": {
     "vscode": "^1.79.1"
