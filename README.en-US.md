@@ -41,7 +41,7 @@ In a complex development environment, we often need to handle multiple projects 
 
 ### 🏖️ Usage Effect
 
-![img](https://cdn.clickapaas.com/uPic/QkGsMk.png)
+![img](https://github.com/Dolov/vscode-project-manager/blob/dev/screenshot/WechatIMG41.jpg?raw=true)
 
 ### 🎉 Try it Out!
 

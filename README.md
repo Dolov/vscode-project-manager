@@ -41,7 +41,7 @@
 
 ### 🏖️ 使用效果
 
-![img](https://cdn.clickapaas.com/uPic/QkGsMk.png)
+![img](https://github.com/Dolov/vscode-project-manager/blob/dev/screenshot/WechatIMG41.jpg?raw=true)
 
 ### 🎉 快来体验吧！
 
