@@ -26,12 +26,12 @@ In a complex development environment, we often need to handle multiple projects 
 
 ### ✨ Features
 
-- **Project Management**: Easily showcase projects from "Recently Used" and "Favorites" for quick access.
-- **One-Click Favorites**: Quickly add projects from "Recently Used" to Favorites for easy retrieval.
-- **Flexible Project Opening**: Supports opening projects in the current window or a new window, enabling seamless environment switching.
-- **Branch Display**: The sidebar displays a list of projects and shows branch names in real-time, clarifying the current context.
-- **Project Copying**: Supports project copying with auto-incremented naming to avoid naming conflicts and save time.
-- **Project Renaming**: Easily rename projects to keep the file structure tidy and facilitate management.
+- **📂 Project Management**: Easily display projects in "Recently Used" and "Favorites" for quick access.
+- **⭐ One-click Favorites**: Quickly add projects from "Recently Used" to your favorites for fast retrieval.
+- **🔄 Flexible Project Opening**: Support opening projects in the current window or a new window, seamlessly switching work environments.
+- **🌿 Branch Display**: Sidebar displays a list of projects with real-time branch names, clarifying the current context.
+- **📋 Project Duplication**: Support for project duplication with auto-incrementing names to avoid naming conflicts and save time.
+- **✏️ Project Renaming**: Easily rename projects to keep your file structure tidy and manageable.
 
 ### 📦 Installation Guide
 
