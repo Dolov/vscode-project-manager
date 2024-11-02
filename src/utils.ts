@@ -45,16 +45,21 @@ export class DataSource {
     this.favorite = [];
     this.context = context;
     this.init();
+    // 频繁的 update 会导致报错，所以延迟一定时间
     this.debounceUpdateFavorite = debounce(async (favorite) => {
       const state = this.context.globalState;
       state.update("favorite", favorite);
       this.init();
-    }, 500);
+    }, 3000);
   }
 
   async init() {
     this.recently = await this.getRecentlyOpened();
     this.favorite = this.getFavorite(this.context);
+  }
+
+  // 通知监听者数据发生变化，需要更新视图
+  fire() {
     for (const listener of this.listeners) {
       listener();
     }
@@ -104,7 +109,13 @@ export class DataSource {
   }
 
   addFavorite(project: ProjectItemProps) {
+    const index = this.favorite.findIndex((item) => item.path === project.path);
+    if (index !== -1) {
+      console.log("项目已存在于收藏夹");
+      return;
+    }
     this.favorite.push(project);
+    this.fire();
     this.debounceUpdateFavorite(this.favorite);
   }
 
@@ -112,6 +123,7 @@ export class DataSource {
     const index = this.favorite.findIndex((item) => item.path === project.path);
     if (index !== -1) {
       this.favorite.splice(index, 1);
+      this.fire();
       this.debounceUpdateFavorite(this.favorite);
     }
   }
@@ -122,6 +134,7 @@ export class DataSource {
     );
     if (index !== -1) {
       this.favorite[index] = newProject;
+      this.fire();
       this.debounceUpdateFavorite(this.favorite);
     }
   }
