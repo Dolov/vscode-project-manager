@@ -155,6 +155,7 @@ export async function activate(context: vscode.ExtensionContext) {
         prompt: "请输入项目名称",
         value: newName,
       });
+      if (!userInputName) return;
       const newPath = `${parentPath}/${userInputName}`;
       copyFolder(dirPath, newPath, {
         ignores: ["node_modules", ".umi", ".yalc"],
